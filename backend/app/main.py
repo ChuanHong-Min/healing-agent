@@ -68,6 +68,19 @@ async def health_check():
     return {"status": "healthy"}
 
 
+@app.get("/api/debug")
+async def debug_info():
+    """调试信息"""
+    import sys
+    from app.config import settings
+    return {
+        "python_version": sys.version,
+        "qwen_api_configured": bool(settings.QWEN_API_KEY),
+        "database_url": settings.DATABASE_URL[:30] + "...",
+        "code_version": "2024-03-06-v2"
+    }
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
