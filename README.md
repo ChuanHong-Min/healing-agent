@@ -13,7 +13,7 @@
 
 ## 🚀 在线体验
 
-访问地址：[https://你的用户名.github.io/healing-agent](https://你的用户名.github.io/healing-agent)
+访问地址：https://chuanhong-min.github.io/healing-agent/
 
 ## 🛠️ 本地开发
 
