@@ -1,0 +1,16 @@
+# Render 部署配置
+services:
+  - type: web
+    name: healing-agent-api
+    env: python
+    region: singapore  # 新加坡节点，国内访问较快
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: QWEN_API_KEY
+        sync: false  # 需要手动在 Render 面板设置
+      - key: QWEN_API_BASE
+        value: https://apis.iflow.cn/v1
+      - key: SECRET_KEY
+        generateValue: true

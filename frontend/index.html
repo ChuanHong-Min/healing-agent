@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>心灵陪伴 - AI治愈心理智能体</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #8B5CF6;
+            --primary-light: #A78BFA;
+            --bg-light: #FAF5FF;
+            --bg-dark: #1a1a2e;
+        }
+        * { box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .app-container {
+            max-width: 480px;
+            margin: 0 auto;
+            min-height: 100vh;
+            background: white;
+            box-shadow: 0 0 40px rgba(0,0,0,0.15);
+        }
+        .chat-container { 
+            height: calc(100vh - 180px); 
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .message-user { 
+            background: linear-gradient(135deg, #8B5CF6, #6366F1); 
+            border-radius: 20px 20px 4px 20px;
+        }
+        .message-ai { 
+            background: linear-gradient(135deg, #f3e8ff, #fdf4ff); 
+            border-radius: 20px 20px 20px 4px;
+        }
+        .typing-indicator span { 
+            animation: typing 1.4s infinite;
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #9CA3AF;
+            border-radius: 50%;
+            margin: 0 3px;
+        }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing { 
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.5; } 
+            30% { transform: translateY(-8px); opacity: 1; } 
+        }
+        .emotion-tag { 
+            font-size: 11px; 
+            padding: 3px 10px; 
+            border-radius: 12px;
+            background: rgba(139, 92, 246, 0.1);
+            color: #7C3AED;
+        }
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(10px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #8B5CF6, #6366F1);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+        }
+        .input-field {
+            transition: all 0.3s ease;
+            border: 2px solid #E5E7EB;
+        }
+        .input-field:focus {
+            border-color: #8B5CF6;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+        }
+        .style-btn.active {
+            background: rgba(139, 92, 246, 0.1);
+            border-color: #8B5CF6;
+        }
+        .mood-btn.active {
+            background: rgba(139, 92, 246, 0.1);
+            border-color: #8B5CF6;
+            transform: scale(1.05);
+        }
+        .header-gradient {
+            background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 50%, #4F46E5 100%);
+        }
+        /* 配置弹窗 */
+        .config-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .config-content {
+            background: white;
+            padding: 24px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 400px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="app-container">
+        <!-- 配置弹窗 -->
+        <div id="configModal" class="config-modal hidden">
+            <div class="config-content">
+                <h3 class="text-xl font-bold mb-4">🔧 配置后端地址</h3>
+                <p class="text-gray-500 text-sm mb-4">首次使用需要配置后端API地址</p>
+                <input id="apiBaseInput" type="text" placeholder="https://your-backend.onrender.com" 
+                    class="w-full p-3 border rounded-lg mb-4 input-field">
+                <button onclick="saveConfig()" class="w-full btn-primary text-white p-3 rounded-lg">保存配置</button>
+                <p class="text-gray-400 text-xs mt-3 text-center">后端部署后会获得此地址</p>
+            </div>
+        </div>
+
+        <!-- 登录页面 -->
+        <div id="loginPage" class="p-6">
+            <div class="text-center py-12">
+                <div class="text-7xl mb-6">🌟</div>
+                <h1 class="text-3xl font-bold text-purple-600 mb-2">心灵陪伴</h1>
+                <p class="text-gray-500 mb-2">你的专属情绪陪伴伙伴</p>
+                <p class="text-gray-400 text-sm">AI驱动 · 温暖共情 · 24小时在线</p>
+            </div>
+            <div class="space-y-4 mt-8">
+                <input id="username" type="text" placeholder="用户名" 
+                    class="w-full p-4 rounded-xl input-field outline-none">
+                <input id="password" type="password" placeholder="密码" 
+                    class="w-full p-4 rounded-xl input-field outline-none">
+                <button onclick="login()" class="w-full btn-primary text-white p-4 rounded-xl font-medium">
+                    登录
+                </button>
+                <button onclick="register()" class="w-full border-2 border-purple-500 text-purple-500 p-4 rounded-xl font-medium hover:bg-purple-50">
+                    注册新账号
+                </button>
+            </div>
+            <p id="loginError" class="text-red-500 text-center mt-4 hidden"></p>
+            <div class="text-center mt-8">
+                <button onclick="showConfigModal()" class="text-gray-400 text-sm">⚙️ 配置后端地址</button>
+            </div>
+        </div>
+
+        <!-- 聊天页面 -->
+        <div id="chatPage" class="hidden flex flex-col h-screen">
+            <!-- 头部 -->
+            <div class="header-gradient text-white p-4 pb-5">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center text-2xl shadow-lg">🌸</div>
+                        <div class="ml-3">
+                            <div class="font-bold text-lg" id="aiNameDisplay">小暖</div>
+                            <div class="text-xs opacity-80" id="modeDisplay">普通模式</div>
+                        </div>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="showSettings()" class="p-2 hover:bg-white/20 rounded-full transition">
+                            <i class="fas fa-cog text-lg"></i>
+                        </button>
+                        <button onclick="showMood()" class="p-2 hover:bg-white/20 rounded-full transition">
+                            <i class="fas fa-heart text-lg"></i>
+                        </button>
+                        <button onclick="logout()" class="p-2 hover:bg-white/20 rounded-full transition">
+                            <i class="fas fa-sign-out-alt text-lg"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="examCountdown" class="hidden mt-3 text-sm bg-white/20 rounded-xl p-3 text-center backdrop-blur"></div>
+            </div>
+
+            <!-- 消息区域 -->
+            <div id="messages" class="flex-1 overflow-y-auto p-4 space-y-4 chat-container bg-gray-50"></div>
+
+            <!-- 输入区域 -->
+            <div class="border-t p-4 bg-white">
+                <div class="flex items-center space-x-3">
+                    <input id="messageInput" type="text" placeholder="说说你的心情..." 
+                        class="flex-1 p-4 border-2 border-gray-200 rounded-full input-field outline-none"
+                        onkeypress="if(event.key==='Enter')sendMessage()">
+                    <button onclick="sendMessage()" class="btn-primary text-white p-4 rounded-full shadow-lg">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 设置页面 -->
+        <div id="settingsPage" class="hidden p-6 bg-gray-50 min-h-screen">
+            <div class="flex items-center mb-6">
+                <button onclick="showChat()" class="mr-4 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow">
+                    <i class="fas fa-arrow-left text-gray-600"></i>
+                </button>
+                <h2 class="text-xl font-bold">个性化设置</h2>
+            </div>
+            <div class="space-y-6">
+                <div class="bg-white p-4 rounded-xl shadow-sm">
+                    <label class="block text-gray-600 mb-2 font-medium">AI伴侣昵称</label>
+                    <input id="aiName" type="text" class="w-full p-3 border-2 rounded-xl input-field outline-none" placeholder="给TA起个名字">
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm">
+                    <label class="block text-gray-600 mb-3 font-medium">陪伴风格</label>
+                    <div class="grid grid-cols-3 gap-3">
+                        <button onclick="setStyle('warm')" class="style-btn p-4 border-2 rounded-xl text-center transition" data-style="warm">
+                            <div class="text-3xl mb-1">☀️</div><div class="text-sm font-medium">温暖姐姐</div>
+                        </button>
+                        <button onclick="setStyle('casual')" class="style-btn p-4 border-2 rounded-xl text-center transition" data-style="casual">
+                            <div class="text-3xl mb-1">😎</div><div class="text-sm font-medium">同龄伙伴</div>
+                        </button>
+                        <button onclick="setStyle('calm')" class="style-btn p-4 border-2 rounded-xl text-center transition" data-style="calm">
+                            <div class="text-3xl mb-1">🧘</div><div class="text-sm font-medium">冷静学长</div>
+                        </button>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm">
+                    <label class="block text-gray-600 mb-2 font-medium">备考目标</label>
+                    <input id="examName" type="text" class="w-full p-3 border-2 rounded-xl input-field outline-none mb-3" placeholder="如：2026高考">
+                    <input id="examDate" type="date" class="w-full p-3 border-2 rounded-xl input-field outline-none">
+                </div>
+                <button onclick="saveSettings()" class="w-full btn-primary text-white p-4 rounded-xl font-medium">
+                    保存设置
+                </button>
+            </div>
+        </div>
+
+        <!-- 情绪打卡页面 -->
+        <div id="moodPage" class="hidden p-6 bg-gray-50 min-h-screen">
+            <div class="flex items-center mb-6">
+                <button onclick="showChat()" class="mr-4 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow">
+                    <i class="fas fa-arrow-left text-gray-600"></i>
+                </button>
+                <h2 class="text-xl font-bold">情绪打卡</h2>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm mb-6">
+                <p class="text-gray-500 mb-4 text-center">今天的心情如何？</p>
+                <div class="grid grid-cols-4 gap-3 mb-6">
+                    <button onclick="selectMood('happy')" class="mood-btn p-3 border-2 rounded-xl transition"><div class="text-3xl">😊</div><div class="text-xs mt-1">开心</div></button>
+                    <button onclick="selectMood('calm')" class="mood-btn p-3 border-2 rounded-xl transition"><div class="text-3xl">😌</div><div class="text-xs mt-1">平静</div></button>
+                    <button onclick="selectMood('anxious')" class="mood-btn p-3 border-2 rounded-xl transition"><div class="text-3xl">😰</div><div class="text-xs mt-1">焦虑</div></button>
+                    <button onclick="selectMood('sad')" class="mood-btn p-3 border-2 rounded-xl transition"><div class="text-3xl">😢</div><div class="text-xs mt-1">低落</div></button>
+                    <button onclick="selectMood('angry')" class="mood-btn p-3 border-2 rounded-xl transition"><div class="text-3xl">😤</div><div class="text-xs mt-1">生气</div></button>
+                    <button onclick="selectMood('tired')" class="mood-btn p-3 border-2 rounded-xl transition"><div class="text-3xl">😴</div><div class="text-xs mt-1">疲惫</div></button>
+                    <button onclick="selectMood('confident')" class="mood-btn p-3 border-2 rounded-xl transition"><div class="text-3xl">💪</div><div class="text-xs mt-1">自信</div></button>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-500 mb-2 text-sm">情绪分数 (1-10)</label>
+                    <input id="moodScore" type="range" min="1" max="10" value="5" class="w-full h-2 bg-purple-200 rounded-lg appearance-none cursor-pointer">
+                    <div class="flex justify-between text-xs text-gray-400 mt-1"><span>很差</span><span id="scoreDisplay" class="text-purple-600 font-bold">5</span><span>很好</span></div>
+                </div>
+                <textarea id="moodNote" placeholder="想说点什么..." class="w-full p-3 border-2 rounded-xl input-field outline-none mb-4 resize-none" rows="2"></textarea>
+                <button onclick="submitMood()" class="w-full btn-primary text-white p-4 rounded-xl font-medium">
+                    完成打卡 ✨
+                </button>
+            </div>
+            <div id="moodHistory"></div>
+        </div>
+    </div>
+
+<script>
+// ==================== 配置管理 ====================
+// 默认后端地址（部署后需要修改这里）
+const DEFAULT_API_BASE = 'https://your-backend.onrender.com/api';
+
+function getApiBase() {
+    return localStorage.getItem('api_base') || DEFAULT_API_BASE;
+}
+
+function showConfigModal() {
+    document.getElementById('configModal').classList.remove('hidden');
+    document.getElementById('apiBaseInput').value = getApiBase().replace('/api', '');
+}
+
+function saveConfig() {
+    let url = document.getElementById('apiBaseInput').value.trim();
+    if (!url) { alert('请输入后端地址'); return; }
+    if (!url.startsWith('http')) url = 'https://' + url;
+    if (url.endsWith('/')) url = url.slice(0, -1);
+    if (!url.endsWith('/api')) url += '/api';
+    localStorage.setItem('api_base', url);
+    document.getElementById('configModal').classList.add('hidden');
+    alert('配置已保存！');
+}
+
+// ==================== 全局变量 ====================
+let token = localStorage.getItem('token');
+let currentMood = 'calm';
+let currentStyle = 'warm';
+let profile = {};
+
+// ==================== 初始化 ====================
+document.addEventListener('DOMContentLoaded', () => {
+    // 检查是否配置了后端
+    if (getApiBase() === DEFAULT_API_BASE && !localStorage.getItem('api_base')) {
+        // 首次使用，不自动弹出配置（用户可能使用默认地址）
+    }
+    
+    if (token) {
+        loadProfile();
+        showChat();
+        loadHistory();
+    }
+    document.getElementById('moodScore').oninput = (e) => {
+        document.getElementById('scoreDisplay').textContent = e.target.value;
+    };
+});
+
+// ==================== API请求 ====================
+async function api(path, options = {}) {
+    const API_BASE = getApiBase();
+    const headers = { 'Content-Type': 'application/json', ...options.headers };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    
+    try {
+        const res = await fetch(API_BASE + path, { ...options, headers });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.detail || '请求失败');
+        }
+        return res.json();
+    } catch (e) {
+        if (e.message.includes('Failed to fetch')) {
+            throw new Error('无法连接服务器，请检查后端地址配置');
+        }
+        throw e;
+    }
+}
+
+// ==================== 认证 ====================
+async function login() {
+    const API_BASE = getApiBase();
+    try {
+        const form = new URLSearchParams();
+        form.append('username', document.getElementById('username').value);
+        form.append('password', document.getElementById('password').value);
+        const res = await fetch(API_BASE + '/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: form
+        });
+        const data = await res.json();
+        if (data.access_token) {
+            token = data.access_token;
+            localStorage.setItem('token', token);
+            loadProfile();
+            showChat();
+            loadHistory();
+        } else {
+            showError(data.detail || '登录失败');
+        }
+    } catch (e) { 
+        showError(e.message.includes('Failed to fetch') ? '无法连接服务器' : e.message); 
+    }
+}
+
+async function register() {
+    try {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        if (!username || !password) { showError('请输入用户名和密码'); return; }
+        if (password.length < 6) { showError('密码至少6位'); return; }
+        
+        const data = await api('/auth/register', {
+            method: 'POST',
+            body: JSON.stringify({ username, password, nickname: username })
+        });
+        token = data.access_token;
+        localStorage.setItem('token', token);
+        loadProfile();
+        showChat();
+        // 显示欢迎消息
+        setTimeout(() => {
+            addMessage('ai', `你好呀！我是小暖，很高兴认识你~ 😊\n\n有什么想和我聊的吗？无论是开心的事还是烦恼，我都愿意倾听。`);
+        }, 500);
+    } catch (e) { showError(e.message); }
+}
+
+function logout() {
+    token = null;
+    localStorage.removeItem('token');
+    location.reload();
+}
+
+function showError(msg) {
+    const el = document.getElementById('loginError');
+    el.textContent = msg;
+    el.classList.remove('hidden');
+    setTimeout(() => el.classList.add('hidden'), 3000);
+}
+
+// ==================== 页面切换 ====================
+function showChat() {
+    document.getElementById('loginPage').classList.add('hidden');
+    document.getElementById('chatPage').classList.remove('hidden');
+    document.getElementById('settingsPage').classList.add('hidden');
+    document.getElementById('moodPage').classList.add('hidden');
+}
+function showSettings() {
+    document.getElementById('chatPage').classList.add('hidden');
+    document.getElementById('settingsPage').classList.remove('hidden');
+}
+function showMood() {
+    document.getElementById('chatPage').classList.add('hidden');
+    document.getElementById('moodPage').classList.remove('hidden');
+    loadMoodHistory();
+}
+
+// ==================== 用户画像 ====================
+async function loadProfile() {
+    try {
+        profile = await api('/profile');
+        document.getElementById('aiNameDisplay').textContent = profile.ai_name || '小暖';
+        document.getElementById('aiName').value = profile.ai_name || '';
+        currentStyle = profile.companion_style || 'warm';
+        updateStyleUI();
+        if (profile.exam_name && profile.exam_days_left > 0) {
+            document.getElementById('examCountdown').classList.remove('hidden');
+            document.getElementById('examCountdown').innerHTML = `📚 ${profile.exam_name} 倒计时：<strong>${profile.exam_days_left}</strong> 天`;
+            document.getElementById('examName').value = profile.exam_name;
+        }
+        updateModeDisplay();
+    } catch (e) { console.error(e); }
+}
+
+function updateModeDisplay() {
+    const hour = new Date().getHours();
+    let mode = '在线陪伴中';
+    if (hour >= 22 || hour < 6) mode = '🌙 深夜模式';
+    else if (profile.exam_days_left > 0) mode = '📖 备考模式';
+    document.getElementById('modeDisplay').textContent = mode;
+}
+
+function updateStyleUI() {
+    document.querySelectorAll('.style-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.style === currentStyle);
+    });
+}
+
+function setStyle(style) {
+    currentStyle = style;
+    updateStyleUI();
+}
+
+async function saveSettings() {
+    try {
+        const updates = { ai_name: document.getElementById('aiName').value || '小暖', companion_style: currentStyle };
+        await api('/profile', { method: 'PUT', body: JSON.stringify(updates) });
+        const examName = document.getElementById('examName').value;
+        const examDate = document.getElementById('examDate').value;
+        if (examName && examDate) {
+            await api(`/profile/exam?exam_name=${encodeURIComponent(examName)}&exam_date=${examDate}T00:00:00`, { method: 'POST' });
+        }
+        loadProfile();
+        showChat();
+        addMessage('ai', '设置已保存！有什么想聊的吗？😊');
+    } catch (e) { alert(e.message); }
+}
+
+// ==================== 对话 ====================
+async function sendMessage() {
+    const input = document.getElementById('messageInput');
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+    addMessage('user', text);
+    showTyping();
+    try {
+        const data = await api('/chat', { method: 'POST', body: JSON.stringify({ message: text }) });
+        hideTyping();
+        addMessage('ai', data.reply, data.emotion);
+    } catch (e) {
+        hideTyping();
+        addMessage('ai', '抱歉，我刚才走神了...能再说一遍吗？😅');
+    }
+}
+
+function addMessage(role, content, emotion = null) {
+    const container = document.getElementById('messages');
+    const div = document.createElement('div');
+    div.className = `fade-in flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+    const emotionTag = emotion ? `<span class="emotion-tag ml-2">${getEmotionEmoji(emotion)}</span>` : '';
+    div.innerHTML = `
+        <div class="max-w-xs lg:max-w-md">
+            <div class="${role === 'user' ? 'message-user text-white' : 'message-ai text-gray-800'} p-4 shadow-sm">
+                ${content.replace(/\n/g, '<br>')}
+            </div>
+            ${role === 'user' && emotion ? `<div class="text-right mt-1">${emotionTag}</div>` : ''}
+        </div>
+    `;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+}
+
+function getEmotionEmoji(emotion) {
+    const map = { 
+        anxious: '😰 焦虑', sad: '😢 低落', angry: '😤 愤怒', helpless: '😞 无助', 
+        happy: '😊 开心', calm: '😌 平静', confused: '🤔 困惑', tired: '😴 疲惫' 
+    };
+    return map[emotion] || emotion;
+}
+
+function showTyping() {
+    const container = document.getElementById('messages');
+    const div = document.createElement('div');
+    div.id = 'typingIndicator';
+    div.className = 'flex justify-start fade-in';
+    div.innerHTML = `
+        <div class="bg-white p-4 rounded-2xl shadow-sm typing-indicator">
+            <span></span><span></span><span></span>
+        </div>
+    `;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+}
+
+function hideTyping() {
+    document.getElementById('typingIndicator')?.remove();
+}
+
+async function loadHistory() {
+    try {
+        const history = await api('/chat/history?limit=20');
+        if (history.length === 0) {
+            // 新用户显示欢迎语
+            addMessage('ai', `你好呀！我是${profile.ai_name || '小暖'}，很高兴认识你~ 😊\n\n有什么想和我聊的吗？`);
+        } else {
+            history.forEach(msg => addMessage(msg.role === 'user' ? 'user' : 'ai', msg.content, msg.emotion));
+        }
+    } catch (e) { console.error(e); }
+}
+
+// ==================== 情绪打卡 ====================
+function selectMood(mood) {
+    currentMood = mood;
+    document.querySelectorAll('.mood-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.closest('.mood-btn').classList.add('active');
+}
+
+async function submitMood() {
+    try {
+        await api('/mood/log', {
+            method: 'POST',
+            body: JSON.stringify({
+                mood: currentMood,
+                mood_score: parseInt(document.getElementById('moodScore').value),
+                note: document.getElementById('moodNote').value,
+                scene: 'daily'
+            })
+        });
+        document.getElementById('moodNote').value = '';
+        loadMoodHistory();
+        showChat();
+        addMessage('ai', `打卡成功！${getEmotionEmoji(currentMood)} 记录下来啦~\n\n想和我聊聊今天的心情吗？`);
+    } catch (e) { alert(e.message); }
+}
+
+async function loadMoodHistory() {
+    try {
+        const logs = await api('/mood/logs?days=7');
+        const container = document.getElementById('moodHistory');
+        if (logs.length === 0) {
+            container.innerHTML = '<div class="bg-white p-4 rounded-xl text-center text-gray-400">还没有打卡记录，开始记录你的心情吧~</div>';
+            return;
+        }
+        container.innerHTML = `
+            <div class="bg-white p-4 rounded-xl shadow-sm">
+                <h3 class="font-bold mb-3 text-gray-700">📊 最近打卡</h3>
+                ${logs.slice(0, 5).map(log => `
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg mb-2">
+                        <span class="text-xl">${getEmotionEmoji(log.mood).split(' ')[0]}</span>
+                        <span class="text-sm text-gray-500">${new Date(log.created_at).toLocaleDateString()}</span>
+                        <span class="text-purple-600 font-bold">${log.mood_score}/10</span>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    } catch (e) { console.error(e); }
+}
+</script>
+</body>
+</html>
