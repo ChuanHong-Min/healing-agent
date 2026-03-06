@@ -96,6 +96,27 @@
         .header-gradient {
             background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 50%, #4F46E5 100%);
         }
+        /* 语音按钮 */
+        .voice-btn {
+            transition: all 0.3s ease;
+        }
+        .voice-btn.recording {
+            background: #EF4444 !important;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        .voice-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #EF4444;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 1s infinite;
+        }
         /* 配置弹窗 */
         .config-modal {
             position: fixed;
@@ -193,13 +214,20 @@
 
             <!-- 输入区域 -->
             <div class="border-t p-4 bg-white">
-                <div class="flex items-center space-x-3">
+                <div class="flex items-center space-x-2">
+                    <!-- 语音输入按钮 -->
+                    <button id="voiceBtn" onclick="toggleVoiceInput()" class="voice-btn bg-gray-100 text-gray-600 p-4 rounded-full hover:bg-gray-200">
+                        <i class="fas fa-microphone"></i>
+                    </button>
                     <input id="messageInput" type="text" placeholder="说说你的心情..." 
                         class="flex-1 p-4 border-2 border-gray-200 rounded-full input-field outline-none"
                         onkeypress="if(event.key==='Enter')sendMessage()">
                     <button onclick="sendMessage()" class="btn-primary text-white p-4 rounded-full shadow-lg">
                         <i class="fas fa-paper-plane"></i>
                     </button>
+                </div>
+                <div id="voiceStatus" class="hidden text-center mt-2 text-sm text-red-500">
+                    <span class="voice-indicator"></span>正在听你说...
                 </div>
             </div>
         </div>
@@ -594,6 +622,139 @@ async function loadMoodHistory() {
         `;
     } catch (e) { console.error(e); }
 }
+
+// ==================== 语音功能 ====================
+let recognition = null;
+let isRecording = false;
+let voiceEnabled = true;  // 是否启用语音回复
+
+// 初始化语音识别
+function initSpeechRecognition() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        console.warn('浏览器不支持语音识别');
+        document.getElementById('voiceBtn').style.display = 'none';
+        return;
+    }
+    
+    recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = 'zh-CN';
+    
+    recognition.onstart = () => {
+        isRecording = true;
+        document.getElementById('voiceBtn').classList.add('recording');
+        document.getElementById('voiceStatus').classList.remove('hidden');
+    };
+    
+    recognition.onresult = (event) => {
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            transcript += event.results[i][0].transcript;
+        }
+        document.getElementById('messageInput').value = transcript;
+        
+        // 如果是最终结果，自动发送
+        if (event.results[event.results.length - 1].isFinal) {
+            setTimeout(() => {
+                if (transcript.trim()) {
+                    sendMessage();
+                }
+            }, 500);
+        }
+    };
+    
+    recognition.onend = () => {
+        isRecording = false;
+        document.getElementById('voiceBtn').classList.remove('recording');
+        document.getElementById('voiceStatus').classList.add('hidden');
+    };
+    
+    recognition.onerror = (event) => {
+        console.error('语音识别错误:', event.error);
+        isRecording = false;
+        document.getElementById('voiceBtn').classList.remove('recording');
+        document.getElementById('voiceStatus').classList.add('hidden');
+        
+        if (event.error === 'not-allowed') {
+            alert('请允许使用麦克风权限');
+        }
+    };
+}
+
+// 切换语音输入
+function toggleVoiceInput() {
+    if (!recognition) {
+        initSpeechRecognition();
+        if (!recognition) {
+            alert('您的浏览器不支持语音输入，请使用Chrome或Safari');
+            return;
+        }
+    }
+    
+    if (isRecording) {
+        recognition.stop();
+    } else {
+        try {
+            recognition.start();
+        } catch (e) {
+            console.error('启动语音识别失败:', e);
+        }
+    }
+}
+
+// 语音朗读回复
+function speakText(text) {
+    if (!voiceEnabled) return;
+    if (!window.speechSynthesis) {
+        console.warn('浏览器不支持语音合成');
+        return;
+    }
+    
+    // 清除之前的语音
+    window.speechSynthesis.cancel();
+    
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'zh-CN';
+    utterance.rate = 1.0;  // 语速
+    utterance.pitch = 1.1;  // 音调
+    utterance.volume = 1.0;  // 音量
+    
+    // 尝试选择中文女声
+    const voices = window.speechSynthesis.getVoices();
+    const zhVoice = voices.find(v => v.lang.includes('zh') && v.name.includes('Female')) ||
+                    voices.find(v => v.lang.includes('zh')) ||
+                    voices[0];
+    if (zhVoice) {
+        utterance.voice = zhVoice;
+    }
+    
+    window.speechSynthesis.speak(utterance);
+}
+
+// 修改 addMessage 函数，添加语音朗读
+const originalAddMessage = addMessage;
+addMessage = function(role, content, emotion = null) {
+    originalAddMessage(role, content, emotion);
+    
+    // AI回复时自动朗读
+    if (role === 'ai' && voiceEnabled) {
+        // 延迟一点再朗读，等待消息显示
+        setTimeout(() => speakText(content), 300);
+    }
+};
+
+// 页面加载时初始化语音
+document.addEventListener('DOMContentLoaded', () => {
+    // 等待语音列表加载
+    if (window.speechSynthesis) {
+        window.speechSynthesis.onvoiceschanged = () => {
+            // 语音列表已加载
+        };
+    }
+    initSpeechRecognition();
+});
 </script>
 </body>
 </html>
