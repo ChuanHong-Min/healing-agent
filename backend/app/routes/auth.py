@@ -18,7 +18,14 @@ from app.schemas import UserCreate, UserLogin, Token, UserInfo
 
 router = APIRouter(prefix="/auth", tags=["认证"])
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# 使用 bcrypt，如果失败则使用 pbkdf2_sha256
+try:
+    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+    # 测试 bcrypt 是否工作
+    pwd_context.hash("test")
+except Exception as e:
+    print(f"bcrypt 不可用，使用 pbkdf2_sha256: {e}")
+    pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 
