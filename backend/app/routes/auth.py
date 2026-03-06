@@ -68,29 +68,37 @@ async def get_current_user(
 @router.post("/register", response_model=Token)
 async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
     """用户注册"""
-    # 检查用户名是否已存在
-    result = await db.execute(select(User).where(User.username == user_data.username))
-    if result.scalar_one_or_none():
-        raise HTTPException(status_code=400, detail="用户名已存在")
-    
-    # 创建用户
-    user = User(
-        username=user_data.username,
-        hashed_password=get_password_hash(user_data.password),
-        nickname=user_data.nickname or "同学"
-    )
-    db.add(user)
-    await db.commit()
-    await db.refresh(user)
-    
-    # 创建默认用户画像
-    profile = UserProfile(user_id=user.id)
-    db.add(profile)
-    await db.commit()
-    
-    # 生成token - sub必须是字符串
-    access_token = create_access_token(data={"sub": str(user.id)})
-    return Token(access_token=access_token)
+    try:
+        # 检查用户名是否已存在
+        result = await db.execute(select(User).where(User.username == user_data.username))
+        if result.scalar_one_or_none():
+            raise HTTPException(status_code=400, detail="用户名已存在")
+        
+        # 创建用户
+        hashed_pw = get_password_hash(user_data.password)
+        user = User(
+            username=user_data.username,
+            hashed_password=hashed_pw,
+            nickname=user_data.nickname or "同学"
+        )
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+        
+        # 创建默认用户画像
+        profile = UserProfile(user_id=user.id)
+        db.add(profile)
+        await db.commit()
+        
+        # 生成token - sub必须是字符串
+        access_token = create_access_token(data={"sub": str(user.id)})
+        return Token(access_token=access_token)
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"注册错误: {type(e).__name__}: {e}")
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f"注册失败: {str(e)}")
 
 
 @router.post("/login", response_model=Token)
