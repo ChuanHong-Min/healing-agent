@@ -3,14 +3,16 @@ services:
   - type: web
     name: healing-agent-api
     env: python
-    region: singapore  # 新加坡节点，国内访问较快
+    region: singapore
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    startCommand: python run.py
     envVars:
       - key: QWEN_API_KEY
-        sync: false  # 需要手动在 Render 面板设置
+        sync: false
       - key: QWEN_API_BASE
         value: https://apis.iflow.cn/v1
       - key: SECRET_KEY
         generateValue: true
+      - key: PYTHON_VERSION
+        value: "3.11"
