@@ -3,11 +3,27 @@ AI治愈心理Agent核心服务
 基于ReAct框架：思考 -> 行动 -> 观察 循环
 """
 import json
+import os
 from datetime import datetime
 from typing import List, Dict, Optional, Tuple
 from openai import AsyncOpenAI
 
 from app.config import settings
+
+
+def load_prompts() -> dict:
+    """加载提示词配置文件"""
+    prompts_path = os.path.join(os.path.dirname(__file__), "prompts.json")
+    try:
+        with open(prompts_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"加载提示词配置失败: {e}")
+        return {}
+
+
+# 全局提示词配置
+PROMPTS = load_prompts()
 
 
 class HealingAgent:
@@ -19,6 +35,7 @@ class HealingAgent:
             base_url=settings.QWEN_API_BASE
         )
         self.model = settings.QWEN_MODEL
+        self.prompts = PROMPTS
         
     # ==================== 系统提示词 ====================
     
