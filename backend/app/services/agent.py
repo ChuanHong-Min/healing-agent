@@ -100,17 +100,7 @@ class HealingAgent:
         exam_info: dict = None
     ) -> Tuple[str, str]:
         """
-        核心对话方法（优化版：单次API调用，同时识别情绪和生成回复）
-        
-        Args:
-            user_message: 用户消息
-            profile: 用户画像
-            history: 历史对话 [{"role": "user/assistant", "content": "..."}]
-            mode: 模式 normal/night/exam
-            exam_info: 备考信息 {"name": "2026高考", "days_left": 100}
-            
-        Returns:
-            (AI回复, 检测到的情绪)
+        核心对话方法（稳定版：直接输出文本，简单情绪检测）
         """
         # 1. 构建系统提示词
         system_prompt = self._get_base_system_prompt(profile, mode)
@@ -123,64 +113,57 @@ class HealingAgent:
                 exam_info.get("days_left", 0)
             )
         
-        # 添加情绪识别要求（在回复中一并处理）
-        system_prompt += """
-
-## 回复格式要求
-请按以下JSON格式回复（严格遵守）：
-{"emotion": "情绪标签", "reply": "你的回复内容"}
-
-情绪标签只能是以下之一：anxious, sad, angry, helpless, happy, calm, confused, tired
-
-示例：
-{"emotion": "anxious", "reply": "我能感受到你现在很焦虑，要不要和我说说是什么让你这么担心？"}
-"""
-        
         # 2. 构建消息列表
         messages = [{"role": "system", "content": system_prompt}]
         
-        # 添加历史对话（最近6轮，减少token提升速度）
+        # 添加历史对话（最近6轮）
         if history:
             messages.extend(history[-12:])
         
         # 添加当前用户消息
         messages.append({"role": "user", "content": user_message})
         
-        # 3. 调用模型（只调用一次）
+        # 3. 调用模型
         try:
             response = await self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
                 temperature=0.7,
-                max_tokens=300,  # 减少max_tokens提升速度
+                max_tokens=200,
                 top_p=0.9
             )
-            result = response.choices[0].message.content.strip()
+            reply = response.choices[0].message.content.strip()
             
-            # 解析JSON格式的回复
-            try:
-                # 尝试解析JSON
-                if result.startswith("{"):
-                    data = json.loads(result)
-                    emotion = data.get("emotion", "calm")
-                    reply = data.get("reply", result)
-                else:
-                    # 如果不是JSON格式，直接使用文本
-                    emotion = "calm"
-                    reply = result
-            except json.JSONDecodeError:
-                emotion = "calm"
-                reply = result
-            
-            # 验证情绪标签
-            valid_emotions = {"anxious", "sad", "angry", "helpless", "happy", "calm", "confused", "tired"}
-            if emotion not in valid_emotions:
-                emotion = "calm"
+            # 简单情绪检测（基于关键词，不再额外调用API）
+            emotion = self._detect_emotion_simple(user_message)
             
             return reply, emotion
         except Exception as e:
-            print(f"对话生成失败: {e}")
-            return "抱歉，我刚才走神了...能再说一遍吗？", "calm"
+            print(f"对话生成失败: {type(e).__name__}: {e}")
+            # 返回一个友好的备用回复
+            return "我在听你说，可以再说一遍吗？", "calm"
+    
+    def _detect_emotion_simple(self, text: str) -> str:
+        """简单情绪检测（基于关键词，无需API调用）"""
+        text_lower = text.lower()
+        
+        # 情绪关键词映射
+        emotion_keywords = {
+            "anxious": ["焦虑", "紧张", "担心", "害怕", "恐惧", "不安", "慌"],
+            "sad": ["难过", "伤心", "哭", "失落", "沮丧", "绝望", "心痛"],
+            "angry": ["生气", "愤怒", "烦", "讨厌", "恨", "火大", "气死"],
+            "tired": ["累", "疲惫", "困", "没劲", "乏", "精疲力竭"],
+            "helpless": ["无助", "无奈", "没办法", "不知道怎么办", "绝望"],
+            "confused": ["迷茫", "困惑", "不懂", "搞不清", "纠结"],
+            "happy": ["开心", "高兴", "快乐", "棒", "好消息", "太好了"]
+        }
+        
+        for emotion, keywords in emotion_keywords.items():
+            for keyword in keywords:
+                if keyword in text_lower:
+                    return emotion
+        
+        return "calm"
     
     # ==================== 每日激励 ====================
     

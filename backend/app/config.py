@@ -19,8 +19,8 @@ class Settings:
     # 千问API
     QWEN_API_KEY: str = os.getenv("QWEN_API_KEY", "")
     QWEN_API_BASE: str = os.getenv("QWEN_API_BASE", "https://apis.iflow.cn/v1")
-    # 使用更快的模型：qwen-turbo 比 qwen3-max 快很多
-    QWEN_MODEL: str = os.getenv("QWEN_MODEL", "qwen-turbo")
+    # 使用稳定的模型
+    QWEN_MODEL: str = os.getenv("QWEN_MODEL", "qwen3-max")
     
     # 数据库 - Render 使用临时文件系统，需要用 /tmp 目录
     DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite+aiosqlite:////tmp/healing_agent.db")
