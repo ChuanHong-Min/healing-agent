@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>心灵陪伴 - AI治愈心理智能体</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #8B5CF6;
+            --primary-light: #A78BFA;
+        }
+        
+        /* 治愈系主题色 */
+        .theme-healing-blue {
+            --bg-main: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 50%, #7dd3fc 100%);
+            --bg-chat: rgba(255,255,255,0.85);
+            --accent: #0ea5e9;
+            --accent-light: #7dd3fc;
+        }
+        .theme-healing-pink {
+            --bg-main: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 50%, #f9a8d4 100%);
+            --bg-chat: rgba(255,255,255,0.85);
+            --accent: #ec4899;
+            --accent-light: #f9a8d4;
+        }
+        .theme-forest-green {
+            --bg-main: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 50%, #86efac 100%);
+            --bg-chat: rgba(255,255,255,0.85);
+            --accent: #22c55e;
+            --accent-light: #86efac;
+        }
+        .theme-warm-sunset {
+            --bg-main: linear-gradient(135deg, #fef3c7 0%, #fde68a 50%, #fcd34d 100%);
+            --bg-chat: rgba(255,255,255,0.85);
+            --accent: #f59e0b;
+            --accent-light: #fcd34d;
+        }
+        .theme-lavender {
+            --bg-main: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 50%, #d8b4fe 100%);
+            --bg-chat: rgba(255,255,255,0.85);
+            --accent: #a855f7;
+            --accent-light: #d8b4fe;
+        }
+        .theme-night-calm {
+            --bg-main: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%);
+            --bg-chat: rgba(30,41,59,0.9);
+            --accent: #818cf8;
+            --accent-light: #a5b4fc;
+        }
+        
+        * { box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+            margin: 0; padding: 0;
+            min-height: 100vh;
+            background: var(--bg-main);
+            transition: background 0.5s ease;
+        }
+        .app-container {
+            max-width: 480px;
+            margin: 0 auto;
+            min-height: 100vh;
+            background: var(--bg-chat);
+            backdrop-filter: blur(10px);
+        }
+        .chat-container { 
+            height: calc(100vh - 180px); 
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .message-user { 
+            background: linear-gradient(135deg, var(--accent), var(--accent-light)); 
+            border-radius: 20px 20px 4px 20px;
+            color: white;
+        }
+        .message-ai { 
+            background: white; 
+            border-radius: 20px 20px 20px 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .typing-indicator span { 
+            animation: typing 1.4s infinite;
+            display: inline-block;
+            width: 8px; height: 8px;
+            background: #9CA3AF;
+            border-radius: 50%;
+            margin: 0 3px;
+        }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing { 
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.5; } 
+            30% { transform: translateY(-8px); opacity: 1; } 
+        }
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(10px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .input-field {
+            border: 2px solid #E5E7EB;
+            transition: all 0.3s ease;
+        }
+        .input-field:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(var(--accent), 0.1);
+        }
+        .card { background: white; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        .option-btn { transition: all 0.2s; border: 2px solid #e5e7eb; }
+        .option-btn:hover { border-color: var(--accent-light); }
+        .option-btn.active { border-color: var(--accent); background: rgba(var(--accent), 0.1); transform: scale(1.02); }
+        .theme-btn { width: 40px; height: 40px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.15); cursor: pointer; transition: transform 0.2s; }
+        .theme-btn:hover { transform: scale(1.1); }
+        .theme-btn.active { box-shadow: 0 0 0 3px var(--accent); }
+        .voice-btn.recording { background: #EF4444 !important; animation: pulse 1s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        .hidden { display: none !important; }
+        .header-gradient { background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%); }
+        
+        /* 深夜模式特殊样式 */
+        .theme-night-calm .card { background: rgba(51,65,85,0.9); color: #e2e8f0; }
+        .theme-night-calm .message-ai { background: rgba(51,65,85,0.95); color: #e2e8f0; }
+        .theme-night-calm .input-field { background: rgba(51,65,85,0.8); color: white; border-color: #475569; }
+        .theme-night-calm .text-gray-600, .theme-night-calm .text-gray-700 { color: #cbd5e1; }
+    </style>
+</head>
+<body class="theme-healing-blue">
+    <div id="app" class="app-container">
+        <!-- 页面内容将通过JavaScript动态加载 -->
+    </div>
+
+<script>
+// ==================== 配置与全局变量 ====================
+const DEFAULT_API_BASE = 'https://healing-agent-l9hx.onrender.com/api';
+let token = localStorage.getItem('token');
+let profile = {};
+let currentTheme = localStorage.getItem('theme') || 'theme-healing-blue';
+
+// 角色模板配置
+const ROLE_TEMPLATES = {
+    'warm_friend': { name: '暖心挚友', icon: '☀️', desc: '平等唠嗑、温暖陪伴', style: 'warm' },
+    'gentle_confidant': { name: '温柔知己', icon: '🌸', desc: '细腻共情、深度倾听', style: 'gentle' },
+    'energetic_buddy': { name: '元气搭子', icon: '⚡', desc: '活泼打气、陪玩陪聊', style: 'casual' },
+    'calm_mentor': { name: '沉稳陪伴者', icon: '🧘', desc: '理性安抚、给建议', style: 'calm' },
+    'healing_tree': { name: '治愈树洞', icon: '🌳', desc: '只听不说、不评判', style: 'tree' },
+    'fun_playmate': { name: '趣味玩伴', icon: '🎮', desc: '玩梗搞笑、轻松闲聊', style: 'fun' }
+};
+
+const TONE_OPTIONS = {
+    'warm': { name: '温柔治愈', icon: '💕' },
+    'energetic': { name: '元气活泼', icon: '✨' },
+    'calm': { name: '沉稳理性', icon: '🎯' },
+    'humor': { name: '幽默轻松', icon: '😄' }
+};
+
+const PROACTIVE_LEVELS = {
+    'very': { name: '很主动', desc: '早安晚安+主动关心', icon: '💬' },
+    'moderate': { name: '适中', desc: '偶尔主动问候', icon: '💭' },
+    'passive': { name: '仅被动回复', desc: '你找我时才回应', icon: '🤫' }
+};
+
+// ==================== 工具函数 ====================
+function getApiBase() { return localStorage.getItem('api_base') || DEFAULT_API_BASE; }
+
+function setTheme(theme) {
+    document.body.className = theme;
+    currentTheme = theme;
+    localStorage.setItem('theme', theme);
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.theme === theme);
+    });
+}
+
+async function api(path, options = {}) {
+    const headers = { 'Content-Type': 'application/json', ...options.headers };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    try {
+        const res = await fetch(getApiBase() + path, { ...options, headers });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.detail || '请求失败');
+        }
+        return res.json();
+    } catch (e) {
+        if (e.message.includes('Failed to fetch')) throw new Error('无法连接服务器');
+        throw e;
+    }
+}
+
+// ==================== 页面渲染 ====================
+function renderApp() {
+    document.body.className = currentTheme;
+    if (!token) {
+        if (!localStorage.getItem('onboarding_done')) {
+            renderOnboarding();
+        } else {
+            renderLogin();
+        }
+    } else {
+        renderChat();
+        loadProfile();
+        loadHistory();
+    }
+}
+
+// 首次引导流程
+function renderOnboarding() {
+    document.getElementById('app').innerHTML = `
+        <div class="min-h-screen p-6 flex flex-col">
+            <div class="text-center py-8">
+                <div class="text-6xl mb-4">🌟</div>
+                <h1 class="text-2xl font-bold text-gray-800 mb-2">欢迎来到心灵陪伴</h1>
+                <p class="text-gray-500">让我们花1分钟，打造你的专属AI伙伴</p>
+            </div>
+            <div id="onboardingSteps" class="flex-1"></div>
+        </div>
+    `;
+    renderOnboardingStep1();
+}
+
+function renderOnboardingStep1() {
+    document.getElementById('onboardingSteps').innerHTML = `
+        <div class="card p-5 mb-4 fade-in">
+            <h3 class="text-lg font-bold text-gray-700 mb-4">🎭 选择陪伴角色</h3>
+            <div class="grid grid-cols-2 gap-3" id="roleOptions">
+                ${Object.entries(ROLE_TEMPLATES).map(([key, role]) => `
+                    <button onclick="selectRole('${key}')" class="option-btn p-4 rounded-xl text-left" data-role="${key}">
+                        <div class="text-2xl mb-1">${role.icon}</div>
+                        <div class="font-medium text-gray-800">${role.name}</div>
+                        <div class="text-xs text-gray-500">${role.desc}</div>
+                    </button>
+                `).join('')}
+            </div>
+        </div>
+        <button onclick="goToStep2()" class="w-full btn-primary text-white p-4 rounded-xl font-medium">
+            下一步 →
+        </button>
+    `;
+}
+
+let selectedRole = 'warm_friend';
+let selectedTone = 'warm';
+let selectedProactive = 'moderate';
+
+function selectRole(role) {
+    selectedRole = role;
+    document.querySelectorAll('#roleOptions .option-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.role === role);
+    });
+}
+
+function goToStep2() {
+    document.getElementById('onboardingSteps').innerHTML = `
+        <div class="card p-5 mb-4 fade-in">
+            <h3 class="text-lg font-bold text-gray-700 mb-4">💬 选择说话风格</h3>
+            <div class="grid grid-cols-2 gap-3" id="toneOptions">
+                ${Object.entries(TONE_OPTIONS).map(([key, tone]) => `
+                    <button onclick="selectTone('${key}')" class="option-btn p-4 rounded-xl text-center" data-tone="${key}">
+                        <div class="text-2xl mb-1">${tone.icon}</div>
+                        <div class="font-medium text-gray-800">${tone.name}</div>
+                    </button>
+                `).join('')}
+            </div>
+        </div>
+        <div class="flex space-x-3">
+            <button onclick="renderOnboardingStep1()" class="flex-1 border-2 border-gray-300 p-4 rounded-xl">← 上一步</button>
+            <button onclick="goToStep3()" class="flex-1 btn-primary text-white p-4 rounded-xl">下一步 →</button>
+        </div>
+    `;
+}
+
+function selectTone(tone) {
+    selectedTone = tone;
+    document.querySelectorAll('#toneOptions .option-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tone === tone);
+    });
+}
+
+function goToStep3() {
+    document.getElementById('onboardingSteps').innerHTML = `
+        <div class="card p-5 mb-4 fade-in">
+            <h3 class="text-lg font-bold text-gray-700 mb-4">📱 主动程度</h3>
+            <div class="space-y-3" id="proactiveOptions">
+                ${Object.entries(PROACTIVE_LEVELS).map(([key, level]) => `
+                    <button onclick="selectProactive('${key}')" class="option-btn w-full p-4 rounded-xl text-left flex items-center" data-level="${key}">
+                        <span class="text-2xl mr-3">${level.icon}</span>
+                        <div>
+                            <div class="font-medium text-gray-800">${level.name}</div>
+                            <div class="text-xs text-gray-500">${level.desc}</div>
+                        </div>
+                    </button>
+                `).join('')}
+            </div>
+        </div>
+        <div class="flex space-x-3">
+            <button onclick="goToStep2()" class="flex-1 border-2 border-gray-300 p-4 rounded-xl">← 上一步</button>
+            <button onclick="finishOnboarding()" class="flex-1 btn-primary text-white p-4 rounded-xl">完成设置 ✨</button>
+        </div>
+    `;
+}
+
+function selectProactive(level) {
+    selectedProactive = level;
+    document.querySelectorAll('#proactiveOptions .option-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.level === level);
+    });
+}
+
+function finishOnboarding() {
+    localStorage.setItem('onboarding_done', 'true');
+    localStorage.setItem('selected_role', selectedRole);
+    localStorage.setItem('selected_tone', selectedTone);
+    localStorage.setItem('selected_proactive', selectedProactive);
+    renderLogin();
+}
+
+// 登录页面
+function renderLogin() {
+    document.getElementById('app').innerHTML = `
+        <div class="min-h-screen p-6 flex flex-col justify-center">
+            <div class="text-center mb-8">
+                <div class="text-6xl mb-4">🌸</div>
+                <h1 class="text-2xl font-bold text-gray-800 mb-2">心灵陪伴</h1>
+                <p class="text-gray-500 text-sm">你的专属情绪陪伴伙伴</p>
+            </div>
+            <div class="card p-6">
+                <input id="username" type="text" placeholder="用户名" class="w-full p-4 rounded-xl input-field outline-none mb-3">
+                <input id="password" type="password" placeholder="密码" class="w-full p-4 rounded-xl input-field outline-none mb-4">
+                <button onclick="login()" class="w-full btn-primary text-white p-4 rounded-xl font-medium mb-3">登录</button>
+                <button onclick="register()" class="w-full border-2 border-gray-300 text-gray-600 p-4 rounded-xl font-medium">注册新账号</button>
+                <p id="loginError" class="text-red-500 text-center mt-4 hidden text-sm"></p>
+            </div>
+            <div class="text-center mt-6">
+                <button onclick="showConfigModal()" class="text-gray-400 text-sm">⚙️ 配置后端</button>
+            </div>
+        </div>
+    `;
+}
+
+async function login() {
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    if (!username || !password) { showLoginError('请输入用户名和密码'); return; }
+    
+    try {
+        const form = new URLSearchParams();
+        form.append('username', username);
+        form.append('password', password);
+        const res = await fetch(getApiBase() + '/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: form
+        });
+        const data = await res.json();
+        if (data.access_token) {
+            token = data.access_token;
+            localStorage.setItem('token', token);
+            renderApp();
+        } else {
+            showLoginError(data.detail || '登录失败');
+        }
+    } catch (e) { showLoginError(e.message); }
+}
+
+async function register() {
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    if (!username || !password) { showLoginError('请输入用户名和密码'); return; }
+    if (password.length < 6) { showLoginError('密码至少6位'); return; }
+    
+    try {
+        const data = await api('/auth/register', {
+            method: 'POST',
+            body: JSON.stringify({ 
+                username, password, nickname: username,
+                companion_style: localStorage.getItem('selected_tone') || 'warm'
+            })
+        });
+        token = data.access_token;
+        localStorage.setItem('token', token);
+        renderApp();
+    } catch (e) { showLoginError(e.message); }
+}
+
+function showLoginError(msg) {
+    const el = document.getElementById('loginError');
+    if (el) { el.textContent = msg; el.classList.remove('hidden'); }
+}
+
+function logout() {
+    token = null;
+    localStorage.removeItem('token');
+    renderApp();
+}
+
+// ==================== 聊天页面 ====================
+function renderChat() {
+    document.getElementById('app').innerHTML = `
+        <div class="flex flex-col h-screen">
+            <!-- 头部 -->
+            <div class="header-gradient text-white p-4 pb-5">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center text-2xl shadow-lg" id="aiAvatar">🌸</div>
+                        <div class="ml-3">
+                            <div class="font-bold text-lg" id="aiNameDisplay">小暖</div>
+                            <div class="text-xs opacity-80" id="modeDisplay">在线陪伴中</div>
+                        </div>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="showSettings()" class="p-2 hover:bg-white/20 rounded-full"><i class="fas fa-cog"></i></button>
+                        <button onclick="showMood()" class="p-2 hover:bg-white/20 rounded-full"><i class="fas fa-heart"></i></button>
+                        <button onclick="logout()" class="p-2 hover:bg-white/20 rounded-full"><i class="fas fa-sign-out-alt"></i></button>
+                    </div>
+                </div>
+                <div id="examCountdown" class="hidden mt-3 text-sm bg-white/20 rounded-xl p-3 text-center"></div>
+            </div>
+            <!-- 消息区域 -->
+            <div id="messages" class="flex-1 overflow-y-auto p-4 space-y-4 chat-container"></div>
+            <!-- 输入区域 -->
+            <div class="border-t p-4 bg-white/90">
+                <div class="flex items-center space-x-2">
+                    <button id="voiceBtn" onclick="toggleVoice()" class="voice-btn bg-gray-100 text-gray-600 p-4 rounded-full hover:bg-gray-200">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+                    <input id="messageInput" type="text" placeholder="说说你的心情..." 
+                        class="flex-1 p-4 border-2 border-gray-200 rounded-full input-field outline-none"
+                        onkeypress="if(event.key==='Enter')sendMessage()">
+                    <button onclick="sendMessage()" class="btn-primary text-white p-4 rounded-full shadow-lg">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+                <div id="voiceStatus" class="hidden text-center mt-2 text-sm text-red-500">🔴 正在听你说...</div>
+            </div>
+        </div>
+    `;
+}
+
+async function loadProfile() {
+    try {
+        profile = await api('/profile');
+        document.getElementById('aiNameDisplay').textContent = profile.ai_name || '小暖';
+        const role = localStorage.getItem('selected_role') || 'warm_friend';
+        if (ROLE_TEMPLATES[role]) {
+            document.getElementById('aiAvatar').textContent = ROLE_TEMPLATES[role].icon;
+        }
+        updateModeDisplay();
+        if (profile.exam_name && profile.exam_days_left > 0) {
+            document.getElementById('examCountdown').classList.remove('hidden');
+            document.getElementById('examCountdown').innerHTML = `📚 ${profile.exam_name} 倒计时：<strong>${profile.exam_days_left}</strong> 天`;
+        }
+    } catch (e) { console.error(e); }
+}
+
+function updateModeDisplay() {
+    const hour = new Date().getHours();
+    let mode = '💚 在线陪伴中';
+    if (hour >= 22 || hour < 6) {
+        mode = '🌙 深夜模式';
+        if (currentTheme !== 'theme-night-calm') setTheme('theme-night-calm');
+    } else if (profile.exam_days_left > 0) {
+        mode = '📖 备考模式';
+    }
+    document.getElementById('modeDisplay').textContent = mode;
+}
+
+async function sendMessage() {
+    const input = document.getElementById('messageInput');
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+    addMessage('user', text);
+    showTyping();
+    try {
+        const data = await api('/chat', { method: 'POST', body: JSON.stringify({ message: text }) });
+        hideTyping();
+        addMessage('ai', data.reply, data.emotion);
+    } catch (e) {
+        hideTyping();
+        addMessage('ai', '抱歉，我刚才走神了...能再说一遍吗？');
+    }
+}
+
+function addMessage(role, content, emotion = null) {
+    const container = document.getElementById('messages');
+    const div = document.createElement('div');
+    div.className = `fade-in flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+    div.innerHTML = `
+        <div class="max-w-xs lg:max-w-md">
+            <div class="${role === 'user' ? 'message-user' : 'message-ai text-gray-800'} p-4">
+                ${content.replace(/\n/g, '<br>')}
+            </div>
+        </div>
+    `;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+    if (role === 'ai' && voiceEnabled) setTimeout(() => speakText(content), 300);
+}
+
+function showTyping() {
+    const container = document.getElementById('messages');
+    const div = document.createElement('div');
+    div.id = 'typingIndicator';
+    div.className = 'flex justify-start fade-in';
+    div.innerHTML = `<div class="bg-white p-4 rounded-2xl shadow-sm typing-indicator"><span></span><span></span><span></span></div>`;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+}
+
+function hideTyping() { document.getElementById('typingIndicator')?.remove(); }
+
+async function loadHistory() {
+    try {
+        const history = await api('/chat/history?limit=20');
+        if (history.length === 0) {
+            const name = profile.ai_name || '小暖';
+            addMessage('ai', `你好呀！我是${name}，很高兴认识你~ 😊\n\n有什么想和我聊的吗？无论是开心的事还是烦恼，我都愿意倾听。`);
+        } else {
+            history.forEach(msg => addMessage(msg.role === 'user' ? 'user' : 'ai', msg.content, msg.emotion));
+        }
+    } catch (e) { console.error(e); }
+}
+
+// ==================== 语音功能 ====================
+let recognition = null;
+let isRecording = false;
+let voiceEnabled = true;
+
+function initSpeechRecognition() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return;
+    recognition = new SR();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = 'zh-CN';
+    recognition.onstart = () => {
+        isRecording = true;
+        document.getElementById('voiceBtn')?.classList.add('recording');
+        document.getElementById('voiceStatus')?.classList.remove('hidden');
+    };
+    recognition.onresult = (event) => {
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            transcript += event.results[i][0].transcript;
+        }
+        document.getElementById('messageInput').value = transcript;
+        if (event.results[event.results.length - 1].isFinal && transcript.trim()) {
+            setTimeout(() => sendMessage(), 500);
+        }
+    };
+    recognition.onend = () => {
+        isRecording = false;
+        document.getElementById('voiceBtn')?.classList.remove('recording');
+        document.getElementById('voiceStatus')?.classList.add('hidden');
+    };
+    recognition.onerror = () => {
+        isRecording = false;
+        document.getElementById('voiceBtn')?.classList.remove('recording');
+        document.getElementById('voiceStatus')?.classList.add('hidden');
+    };
+}
+
+function toggleVoice() {
+    if (!recognition) initSpeechRecognition();
+    if (!recognition) { alert('浏览器不支持语音输入'); return; }
+    if (isRecording) recognition.stop();
+    else try { recognition.start(); } catch(e) {}
+}
+
+function speakText(text) {
+    if (!voiceEnabled || !window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'zh-CN';
+    utterance.rate = 1.0;
+    utterance.pitch = 1.1;
+    const voices = window.speechSynthesis.getVoices();
+    const zhVoice = voices.find(v => v.lang.includes('zh'));
+    if (zhVoice) utterance.voice = zhVoice;
+    window.speechSynthesis.speak(utterance);
+}
+
+// ==================== 设置页面 ====================
+function showSettings() {
+    document.getElementById('app').innerHTML = `
+        <div class="min-h-screen p-6">
+            <div class="flex items-center mb-6">
+                <button onclick="renderChat();loadProfile();loadHistory()" class="mr-4 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow">
+                    <i class="fas fa-arrow-left text-gray-600"></i>
+                </button>
+                <h2 class="text-xl font-bold text-gray-800">个性化设置</h2>
+            </div>
+            
+            <!-- 主题选择 -->
+            <div class="card p-5 mb-4">
+                <h3 class="font-bold text-gray-700 mb-4">🎨 主题背景</h3>
+                <div class="flex flex-wrap gap-3 justify-center">
+                    <button onclick="setTheme('theme-healing-blue')" data-theme="theme-healing-blue" 
+                        class="theme-btn ${currentTheme === 'theme-healing-blue' ? 'active' : ''}" 
+                        style="background: linear-gradient(135deg, #7dd3fc, #0ea5e9)"></button>
+                    <button onclick="setTheme('theme-healing-pink')" data-theme="theme-healing-pink" 
+                        class="theme-btn ${currentTheme === 'theme-healing-pink' ? 'active' : ''}" 
+                        style="background: linear-gradient(135deg, #f9a8d4, #ec4899)"></button>
+                    <button onclick="setTheme('theme-forest-green')" data-theme="theme-forest-green" 
+                        class="theme-btn ${currentTheme === 'theme-forest-green' ? 'active' : ''}" 
+                        style="background: linear-gradient(135deg, #86efac, #22c55e)"></button>
+                    <button onclick="setTheme('theme-warm-sunset')" data-theme="theme-warm-sunset" 
+                        class="theme-btn ${currentTheme === 'theme-warm-sunset' ? 'active' : ''}" 
+                        style="background: linear-gradient(135deg, #fcd34d, #f59e0b)"></button>
+                    <button onclick="setTheme('theme-lavender')" data-theme="theme-lavender" 
+                        class="theme-btn ${currentTheme === 'theme-lavender' ? 'active' : ''}" 
+                        style="background: linear-gradient(135deg, #d8b4fe, #a855f7)"></button>
+                    <button onclick="setTheme('theme-night-calm')" data-theme="theme-night-calm" 
+                        class="theme-btn ${currentTheme === 'theme-night-calm' ? 'active' : ''}" 
+                        style="background: linear-gradient(135deg, #475569, #1e293b)"></button>
+                </div>
+                <p class="text-xs text-gray-500 text-center mt-3">治愈蓝 · 元气粉 · 森林绿 · 暖阳橙 · 薰衣草 · 深夜静</p>
+            </div>
+            
+            <!-- AI伴侣设置 -->
+            <div class="card p-5 mb-4">
+                <h3 class="font-bold text-gray-700 mb-4">💕 AI伴侣</h3>
+                <div class="mb-4">
+                    <label class="block text-gray-600 text-sm mb-2">昵称</label>
+                    <input id="aiName" type="text" value="${profile.ai_name || '小暖'}" 
+                        class="w-full p-3 rounded-xl input-field outline-none" placeholder="给TA起个名字">
+                </div>
+                <div>
+                    <label class="block text-gray-600 text-sm mb-3">陪伴角色</label>
+                    <div class="grid grid-cols-3 gap-2" id="roleSelector">
+                        ${Object.entries(ROLE_TEMPLATES).map(([key, role]) => `
+                            <button onclick="selectSettingRole('${key}')" data-role="${key}"
+                                class="option-btn p-3 rounded-xl text-center ${localStorage.getItem('selected_role') === key ? 'active' : ''}">
+                                <div class="text-xl">${role.icon}</div>
+                                <div class="text-xs text-gray-600 mt-1">${role.name}</div>
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 交互风格 -->
+            <div class="card p-5 mb-4">
+                <h3 class="font-bold text-gray-700 mb-4">💬 交互风格</h3>
+                <div class="grid grid-cols-2 gap-2" id="toneSelector">
+                    ${Object.entries(TONE_OPTIONS).map(([key, tone]) => `
+                        <button onclick="selectSettingTone('${key}')" data-tone="${key}"
+                            class="option-btn p-3 rounded-xl text-center ${(profile.companion_style || localStorage.getItem('selected_tone')) === key ? 'active' : ''}">
+                            <span class="text-lg mr-1">${tone.icon}</span>
+                            <span class="text-sm text-gray-700">${tone.name}</span>
+                        </button>
+                    `).join('')}
+                </div>
+            </div>
+            
+            <!-- 语音设置 -->
+            <div class="card p-5 mb-4">
+                <h3 class="font-bold text-gray-700 mb-4">🔊 语音设置</h3>
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                    <span class="text-gray-700">AI自动朗读回复</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="voiceToggle" ${voiceEnabled ? 'checked' : ''} onchange="voiceEnabled = this.checked" class="sr-only peer">
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:ring-2 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- 备考目标 -->
+            <div class="card p-5 mb-4">
+                <h3 class="font-bold text-gray-700 mb-4">📚 备考目标</h3>
+                <input id="examName" type="text" value="${profile.exam_name || ''}" 
+                    class="w-full p-3 rounded-xl input-field outline-none mb-3" placeholder="如：2026高考">
+                <input id="examDate" type="date" 
+                    class="w-full p-3 rounded-xl input-field outline-none">
+            </div>
+            
+            <!-- 隐私与记忆 -->
+            <div class="card p-5 mb-4">
+                <h3 class="font-bold text-gray-700 mb-4">🔒 隐私与记忆</h3>
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                        <span class="text-gray-700 text-sm">记忆范围</span>
+                        <select id="memoryScope" class="bg-white border rounded-lg px-3 py-1 text-sm">
+                            <option value="habits">仅记习惯</option>
+                            <option value="emotions">记习惯+情绪</option>
+                            <option value="none">不记私人信息</option>
+                        </select>
+                    </div>
+                    <button onclick="clearMemory()" class="w-full p-3 border-2 border-red-200 text-red-500 rounded-xl text-sm hover:bg-red-50">
+                        🗑️ 清空所有记忆
+                    </button>
+                </div>
+            </div>
+            
+            <button onclick="saveSettings()" class="w-full btn-primary text-white p-4 rounded-xl font-medium">
+                保存设置
+            </button>
+        </div>
+    `;
+}
+
+let settingRole = localStorage.getItem('selected_role') || 'warm_friend';
+let settingTone = profile.companion_style || localStorage.getItem('selected_tone') || 'warm';
+
+function selectSettingRole(role) {
+    settingRole = role;
+    document.querySelectorAll('#roleSelector .option-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.role === role);
+    });
+}
+
+function selectSettingTone(tone) {
+    settingTone = tone;
+    document.querySelectorAll('#toneSelector .option-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tone === tone);
+    });
+}
+
+async function saveSettings() {
+    try {
+        const aiName = document.getElementById('aiName').value || '小暖';
+        await api('/profile', { 
+            method: 'PUT', 
+            body: JSON.stringify({ ai_name: aiName, companion_style: settingTone }) 
+        });
+        localStorage.setItem('selected_role', settingRole);
+        localStorage.setItem('selected_tone', settingTone);
+        
+        const examName = document.getElementById('examName').value;
+        const examDate = document.getElementById('examDate').value;
+        if (examName && examDate) {
+            await api(`/profile/exam?exam_name=${encodeURIComponent(examName)}&exam_date=${examDate}T00:00:00`, { method: 'POST' });
+        }
+        
+        renderChat();
+        loadProfile();
+        loadHistory();
+        setTimeout(() => addMessage('ai', '设置已更新！有什么想聊的吗？'), 500);
+    } catch (e) { alert(e.message); }
+}
+
+function clearMemory() {
+    if (confirm('确定要清空所有对话记忆吗？此操作不可恢复。')) {
+        // 清空本地缓存
+        localStorage.removeItem('chat_history');
+        alert('记忆已清空');
+    }
+}
+
+// ==================== 情绪打卡页面 ====================
+let currentMood = 'calm';
+
+function showMood() {
+    document.getElementById('app').innerHTML = `
+        <div class="min-h-screen p-6">
+            <div class="flex items-center mb-6">
+                <button onclick="renderChat();loadProfile();loadHistory()" class="mr-4 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow">
+                    <i class="fas fa-arrow-left text-gray-600"></i>
+                </button>
+                <h2 class="text-xl font-bold text-gray-800">情绪打卡</h2>
+            </div>
+            
+            <div class="card p-5 mb-6">
+                <p class="text-gray-600 mb-4 text-center">今天的心情如何？</p>
+                <div class="grid grid-cols-4 gap-3 mb-6" id="moodGrid">
+                    <button onclick="selectMood('happy')" class="mood-btn p-3 border-2 rounded-xl transition text-center" data-mood="happy">
+                        <div class="text-3xl">😊</div><div class="text-xs mt-1 text-gray-600">开心</div>
+                    </button>
+                    <button onclick="selectMood('calm')" class="mood-btn p-3 border-2 rounded-xl transition text-center" data-mood="calm">
+                        <div class="text-3xl">😌</div><div class="text-xs mt-1 text-gray-600">平静</div>
+                    </button>
+                    <button onclick="selectMood('anxious')" class="mood-btn p-3 border-2 rounded-xl transition text-center" data-mood="anxious">
+                        <div class="text-3xl">😰</div><div class="text-xs mt-1 text-gray-600">焦虑</div>
+                    </button>
+                    <button onclick="selectMood('sad')" class="mood-btn p-3 border-2 rounded-xl transition text-center" data-mood="sad">
+                        <div class="text-3xl">😢</div><div class="text-xs mt-1 text-gray-600">低落</div>
+                    </button>
+                    <button onclick="selectMood('angry')" class="mood-btn p-3 border-2 rounded-xl transition text-center" data-mood="angry">
+                        <div class="text-3xl">😤</div><div class="text-xs mt-1 text-gray-600">生气</div>
+                    </button>
+                    <button onclick="selectMood('tired')" class="mood-btn p-3 border-2 rounded-xl transition text-center" data-mood="tired">
+                        <div class="text-3xl">😴</div><div class="text-xs mt-1 text-gray-600">疲惫</div>
+                    </button>
+                    <button onclick="selectMood('confident')" class="mood-btn p-3 border-2 rounded-xl transition text-center" data-mood="confident">
+                        <div class="text-3xl">💪</div><div class="text-xs mt-1 text-gray-600">自信</div>
+                    </button>
+                    <button onclick="selectMood('love')" class="mood-btn p-3 border-2 rounded-xl transition text-center" data-mood="love">
+                        <div class="text-3xl">🥰</div><div class="text-xs mt-1 text-gray-600">幸福</div>
+                    </button>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-gray-500 mb-2 text-sm">情绪分数 (1-10)</label>
+                    <input id="moodScore" type="range" min="1" max="10" value="5" 
+                        oninput="document.getElementById('scoreDisplay').textContent = this.value"
+                        class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-500">
+                    <div class="flex justify-between text-xs text-gray-400 mt-1">
+                        <span>很差</span>
+                        <span id="scoreDisplay" class="text-purple-600 font-bold">5</span>
+                        <span>很好</span>
+                    </div>
+                </div>
+                
+                <textarea id="moodNote" placeholder="想说点什么..." 
+                    class="w-full p-3 border-2 rounded-xl input-field outline-none mb-4 resize-none" rows="2"></textarea>
+                
+                <button onclick="submitMood()" class="w-full btn-primary text-white p-4 rounded-xl font-medium">
+                    完成打卡 ✨
+                </button>
+            </div>
+            
+            <div id="moodHistory"></div>
+        </div>
+    `;
+    loadMoodHistory();
+}
+
+function selectMood(mood) {
+    currentMood = mood;
+    document.querySelectorAll('#moodGrid .mood-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mood === mood);
+        btn.style.borderColor = btn.dataset.mood === mood ? 'var(--accent)' : '#e5e7eb';
+        btn.style.background = btn.dataset.mood === mood ? 'rgba(139, 92, 246, 0.1)' : 'white';
+    });
+}
+
+async function submitMood() {
+    try {
+        await api('/mood/log', {
+            method: 'POST',
+            body: JSON.stringify({
+                mood: currentMood,
+                mood_score: parseInt(document.getElementById('moodScore').value),
+                note: document.getElementById('moodNote').value,
+                scene: 'daily'
+            })
+        });
+        renderChat();
+        loadProfile();
+        loadHistory();
+        setTimeout(() => {
+            addMessage('ai', `打卡成功！记录下来啦~\n\n想和我聊聊今天的心情吗？`);
+        }, 500);
+    } catch (e) { alert(e.message); }
+}
+
+async function loadMoodHistory() {
+    try {
+        const logs = await api('/mood/logs?days=7');
+        const container = document.getElementById('moodHistory');
+        if (logs.length === 0) {
+            container.innerHTML = '<div class="card p-4 text-center text-gray-400">还没有打卡记录，开始记录你的心情吧~</div>';
+            return;
+        }
+        const moodEmojis = { happy: '😊', calm: '😌', anxious: '😰', sad: '😢', angry: '😤', tired: '😴', confident: '💪', love: '🥰' };
+        container.innerHTML = `
+            <div class="card p-5">
+                <h3 class="font-bold text-gray-700 mb-4">📊 最近打卡</h3>
+                ${logs.slice(0, 5).map(log => `
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl mb-2">
+                        <span class="text-xl">${moodEmojis[log.mood] || '😐'}</span>
+                        <span class="text-sm text-gray-500">${new Date(log.created_at).toLocaleDateString()}</span>
+                        <span class="font-bold" style="color: var(--accent)">${log.mood_score}/10</span>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    } catch (e) { console.error(e); }
+}
+
+// ==================== 配置弹窗 ====================
+function showConfigModal() {
+    const modal = document.createElement('div');
+    modal.id = 'configModal';
+    modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50';
+    modal.innerHTML = `
+        <div class="bg-white p-6 rounded-2xl w-11/12 max-w-sm">
+            <h3 class="text-xl font-bold mb-4">🔧 配置后端地址</h3>
+            <p class="text-gray-500 text-sm mb-4">首次使用需要配置后端API地址</p>
+            <input id="apiBaseInput" type="text" value="${getApiBase().replace('/api', '')}" 
+                placeholder="https://your-backend.onrender.com" 
+                class="w-full p-3 border rounded-lg mb-4 input-field">
+            <div class="flex space-x-3">
+                <button onclick="document.getElementById('configModal').remove()" 
+                    class="flex-1 border-2 border-gray-300 p-3 rounded-lg">取消</button>
+                <button onclick="saveConfig()" class="flex-1 btn-primary text-white p-3 rounded-lg">保存</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+function saveConfig() {
+    let url = document.getElementById('apiBaseInput').value.trim();
+    if (!url) { alert('请输入后端地址'); return; }
+    if (!url.startsWith('http')) url = 'https://' + url;
+    if (url.endsWith('/')) url = url.slice(0, -1);
+    if (!url.endsWith('/api')) url += '/api';
+    localStorage.setItem('api_base', url);
+    document.getElementById('configModal')?.remove();
+    alert('配置已保存！');
+}
+
+// ==================== 初始化 ====================
+document.addEventListener('DOMContentLoaded', () => {
+    // 加载语音
+    if (window.speechSynthesis) {
+        window.speechSynthesis.onvoiceschanged = () => {};
+    }
+    initSpeechRecognition();
+    renderApp();
+});
+</script>
+</body>
+</html>

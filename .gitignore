@@ -1,26 +1,6 @@
-# Python
+.venv/
+*.pyc
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-venv/
-ENV/
-.env
-
-# Database
 *.db
-*.sqlite3
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
+.env
+healing_agent_local.db
