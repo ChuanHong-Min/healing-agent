@@ -70,13 +70,35 @@ async def chat(
     history_records = history_result.scalars().all()
     history = [{"role": r.role, "content": r.content} for r in reversed(history_records)]
     
-    # 4. 构建profile字典
+    # 4. 构建完整profile字典（对齐agent.py的7大模块所有字段）
     profile_dict = {
-        "ai_name": profile.ai_name,
-        "companion_style": profile.companion_style,
+        # 模块1：核心身份人设
+        "ai_name": profile.ai_name or "小暖",
+        "role_template": profile.role_template or "warm_friend",
+        "gender_feel": profile.gender_feel or "none",
+        "age_feel": profile.age_feel or "youth",
+        "personality_tags": profile.personality_tags or [],
+        "user_nickname": current_user.nickname or "朋友",
+        # 模块2：交互风格
+        "companion_style": profile.companion_style or "warm",
+        "reply_length": profile.reply_length or "normal",
+        "address_mode": profile.address_mode or "nickname",
+        "custom_address": profile.custom_address,
+        "emoji_habit": profile.emoji_habit or "sometimes",
+        # 模块3：陪伴场景
+        "focus_scenarios": profile.focus_scenarios or [],
+        # 模块4：主动边界
+        "proactive_level": profile.proactive_level or "moderate",
+        "proactive_behaviors": profile.proactive_behaviors or [],
+        "sleep_mode": profile.sleep_mode or False,
+        # 模块5：话题边界
+        "preferred_topics": profile.preferred_topics or [],
+        "forbidden_topics": profile.forbidden_topics or [],
+        "custom_forbidden_words": profile.custom_forbidden_words or [],
         "forbidden_phrases": profile.forbidden_phrases or [],
-        "user_nickname": current_user.nickname,
-        "focus_scenarios": profile.focus_scenarios or []
+        # 模块7：特色与情绪敏感度
+        "emotion_sensitivity": profile.emotion_sensitivity or "medium",
+        "ai_catchphrase": profile.ai_catchphrase or "",
     }
     
     # 5. 构建exam_info

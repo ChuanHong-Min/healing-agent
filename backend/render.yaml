@@ -5,14 +5,19 @@ services:
     env: python
     region: singapore
     plan: free
+    rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: python run.py
     envVars:
       - key: QWEN_API_KEY
-        sync: false
+        sync: false   # 在 Render Dashboard 手动填写
       - key: QWEN_API_BASE
         value: https://apis.iflow.cn/v1
+      - key: QWEN_MODEL
+        value: qwen3-max
       - key: SECRET_KEY
         generateValue: true
+      - key: DATABASE_URL
+        value: sqlite+aiosqlite:////tmp/healing_agent.db
       - key: PYTHON_VERSION
         value: "3.11"
